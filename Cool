@@ -1,0 +1,203 @@
+local function _b64(s)
+    local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    s = string.gsub(s, '[^'..b..'=]', '')
+    return (s:gsub('.', function(x)
+        if (x == '=') then return '' end
+        local r,f = '', (b:find(x)-1)
+        for i=6,0,-1 do r = r .. (math.floor(f/2^i) % 2) end
+        return r
+    end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(byte)
+        if (#byte ~= 8) then return '' end
+        local c = 0
+        for i = 1,8 do c = c + (byte:sub(i,i) == '1' and 2^(8-i) or 0) end
+        return string.char(c)
+    end))
+end
+
+local function _bytes(s)
+    local t = {}
+    for n in string.gmatch(s, "%d+") do
+        table.insert(t, string.char(tonumber(n)))
+    end
+    return table.concat(t)
+end
+
+-- decoded hidden strings (mix of base64 + byte-list)
+local _u_ray = _b64("aHR0cHM6Ly9zaXJpdXMubWVudS9yYXlmaWVsZA==") -- https://sirius.menu/rayfield
+local _u_win = _b64("8J+UpU1hZ21hIFNjcmlwdCdz8J+UpQ==") -- 🔥Magma Script's🔥
+local _u_lt  = _b64("TG9hZGluZyBTY3JpcHQuLi4=") -- Loading Script...
+local _u_ls  = _b64("YnkgTWFnbWEgU2NyaXB0ZXI=") -- by Magma Scripter
+local _u_theme= _b64("QW1iZXJHbG93") -- AmberGlow
+local _u_kb  = _b64("Sw==") -- K
+local _u_kt  = _b64("S2V5IFN5c3RlbSA6KQ==") -- Key System :)
+local _u_ks  = _b64("S2V5") -- Key
+local _u_kn  = _b64("Sm9pbiBUaGUgRGlzY29yZA==") -- Join The Discord
+local _u_kf  = _b64("S2V5IGZpbGU=") -- Key file
+local _u_nt  = _b64("4p2X") -- ❗
+local _u_nc  = _b64("VGhhbmsgeW91IGZvciB1c2luZyBteSBzY3JpcHQh") -- Thank you for using my script!
+local _k1 = _b64("Qm9i") -- Bob
+local _k2 = _b64("VW5pdmVyc2FsIEtleQ==") -- Universal Key
+local _k3 = _b64("TWFnbWFzYWtlbg==") -- Magmasaken
+local _k4 = _b64("TGF2YSBDaGlja2Vu") -- Lava Chicken
+local _img_bytes = "52,52,56,51,51,54,50,52,53,56" -- "4483362458" as bytes (digits)
+local _imgid = tonumber(_bytes(_img_bytes))
+
+-- short locals for services
+local _G = game
+local _Players = _G:GetService("Players")
+local _Run = _G:GetService("RunService")
+local _Lighting = _G:GetService("Lighting")
+local _Tween = _G:GetService("TweenService")
+
+
+local _Rayfield = loadstring(_G:HttpGet(_u_ray))()
+local _Window = _Rayfield:CreateWindow({
+    Name = "Magma Script"
+    LoadingTitle = "Loading.."
+    LoadingSubtitle = "by Magma Scripter"
+    Theme = "AmberGlow"
+    ToggleUIKeybind = k,
+    KeySystem = true,
+    KeySettings = {
+        Title = "Key System❗"
+        Subtitle = "💭"
+        Note = "Join the discord(trust)",
+        FileName = _u_kf,
+        SaveKey = true,
+        GrabKeyFromSite = false,
+        Key = {"Bob","Universal Key","Magmasaken","Lava Chicken"}
+    }
+})
+
+_Rayfield:Notify({
+    Title = _u_nt,
+    Content = _u_nc,
+    Duration = 6.5,
+    Image = _imgid
+})
+
+
+local function _smooth(h,p,tv)
+    spawn(function()
+        while h and h.Parent and h[p] ~= tv do
+            local cur = h[p]
+            local step = (tv - cur) * 0.1
+            h[p] = cur + step
+            task.wait(0.05)
+        end
+    end)
+end
+
+
+local _ESPTab = _Window:CreateTab(_b64("RVNQ"), _imgid) -- "ESP" encoded quickly
+local _ESPOn = false
+local _col = {Green = Color3.fromRGB(0,255,0), Blue = Color3.fromRGB(0,0,255), Red = Color3.fromRGB(255,0,0)}
+local _colChosen = _col.Green
+
+local function _getChar(pl)
+    if pl.Character and pl.Character:FindFirstChild("HumanoidRootPart") then return pl.Character end
+    return nil
+end
+
+local function _enableESP()
+    for _,pl in ipairs(_Players:GetPlayers()) do
+        if pl ~= _Players.LocalPlayer then
+            local ch = _getChar(pl)
+            if ch and not ch:FindFirstChild("ESPHighlight") then
+                local hi = Instance.new("Highlight")
+                hi.Name = "ESPHighlight"
+                hi.FillColor = _colChosen
+                hi.FillTransparency = 0.5
+                hi.OutlineColor = Color3.new(1,1,1)
+                hi.OutlineTransparency = 0
+                hi.Adornee = ch
+                hi.Parent = ch
+            end
+        end
+    end
+end
+
+local function _disableESP()
+    for _,pl in ipairs(_Players:GetPlayers()) do
+        if pl ~= _Players.LocalPlayer then
+            local ch = _getChar(pl)
+            if ch and ch:FindFirstChild("ESPHighlight") then
+                ch:FindFirstChild("ESPHighlight"):Destroy()
+            end
+        end
+    end
+end
+
+_ESPTab:CreateToggle({Name = "ESP", CurrentValue = false, Callback = function(v) _ESPOn = v if v then _enableESP() else _disableESP() end end})
+
+_Players.PlayerAdded:Connect(function(pl) pl.CharacterAdded:Connect(function() if _ESPOn then task.wait(1) _enableESP() end end) end)
+_Players.PlayerRemoving:Connect(function() _disableESP() end)
+
+
+local _MoveTab = _Window:CreateTab(_b64("TW92ZW1lbnQ="), _imgid) -- "Movement" b64
+local _wsSlider = _MoveTab:CreateSlider({ Name = "Set WalkSpeed", Range = {16,500}, Increment = 1, Suffix = "Speed", CurrentValue = 16, Callback = function(val) if _Players.LocalPlayer.Character and _Players.LocalPlayer.Character:FindFirstChild("Humanoid") then _smooth(_Players.LocalPlayer.Character.Humanoid,"WalkSpeed",val) end end })
+
+_Players.LocalPlayer.CharacterAdded:Connect(function(ch) local hum = ch:WaitForChild("Humanoid") task.wait(0.1) _smooth(hum,"WalkSpeed",_wsSlider.CurrentValue) end)
+
+_MoveTab:CreateSlider({ Name = "JumpPower", Range = {50,300}, Increment = 1, Suffix = "Power", CurrentValue = 50, Callback = function(val) if _Players.LocalPlayer.Character and _Players.LocalPlayer.Character:FindFirstChild("Humanoid") then _smooth(_Players.LocalPlayer.Character.Humanoid,"JumpPower",val) end end})
+
+_MoveTab:CreateToggle({ Name = "Click Tween", CurrentValue = false, Callback = function(enabled)
+    local cam = workspace.CurrentCamera
+    local ch = _Players.LocalPlayer.Character or _Players.LocalPlayer.CharacterAdded:Wait()
+    local root = ch:WaitForChild("HumanoidRootPart")
+    local tweenSpeed = 20
+    local maxDist = 200
+    local cd = 0.3
+    local last = 0
+    local conn
+    local function _moveTo(pos)
+        local d = (root.Position - pos).Magnitude
+        if d > maxDist then return end
+        local ti = TweenInfo.new(d / tweenSpeed, Enum.EasingStyle.Linear)
+        local tw = _Tween:Create(root,ti,{CFrame = CFrame.new(pos)})
+        tw:Play()
+    end
+    if enabled then
+        conn = game:GetService("UserInputService").InputBegan:Connect(function(inp,processed)
+            if processed then return end
+            if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+                if tick() - last < cd then return end
+                local m = game:GetService("UserInputService"):GetMouseLocation()
+                local ray = cam:ViewportPointToRay(m.X,m.Y)
+                local rp = RaycastParams.new()
+                rp.FilterDescendantsInstances = {ch}
+                rp.FilterType = Enum.RaycastFilterType.Blacklist
+                local res = workspace:Raycast(ray.Origin, ray.Direction * 500, rp)
+                if res and res.Instance and res.Instance:IsA("BasePart") then
+                    _moveTo(res.Position)
+                    last = tick()
+                end
+            end
+        end)
+    else
+        if conn then conn:Disconnect() end
+    end
+end})
+
+
+local _Combat = _Window:CreateTab(_b64("Q29tYmF0"), _imgid) -- "Combat"
+local _hbVal = 5
+_Combat:CreateSlider({ Name = "Hitbox Size", Range = {2,100}, Increment = 1, Suffix = "studs", CurrentValue = _hbVal, Callback = function(v) _hbVal = v end })
+
+_Combat:CreateToggle({ Name = "Hitbox Expander", CurrentValue = false, Callback = function(on)
+    local cache = {}
+    local conn
+    local function expand(ch)
+        local hrp = ch:FindFirstChild("HumanoidRootPart")
+        if hrp and not cache[hrp] then
+            cache[hrp] = hrp.Size
+            local t = _Tween:Create(hrp, TweenInfo.new(0.25), {Size = Vector3.new(_hbVal,_hbVal,_hbVal)})
+            t:Play()
+            hrp.Massless = true
+            hrp.CanCollide = false
+        end
+    end
+    local function revert()
+        for part,orig in pairs(cache) do
+            if part and part.Parent then
+                local t2 = _Tween:Create(part, TweenInfo.new(0.25), {Size =
